@@ -1,0 +1,6 @@
+source;share/hapManager/hook/pythonpath.ps1
+source;share/hapManager/hook/pythonpath.dsv
+source;share/hapManager/hook/pythonpath.sh
+source;share/hapManager/hook/ament_prefix_path.ps1
+source;share/hapManager/hook/ament_prefix_path.dsv
+source;share/hapManager/hook/ament_prefix_path.sh

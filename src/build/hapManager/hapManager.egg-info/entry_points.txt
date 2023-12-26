@@ -1,0 +1,6 @@
+[console_scripts]
+livox_subscriber = hapDataManager.livox_subscriber:main
+publisher = hapDataManager.publisher:main
+subscriber = hapDataManager.subscriber:main
+ws_publisher = hapDataManager.ws_publisher:main
+
