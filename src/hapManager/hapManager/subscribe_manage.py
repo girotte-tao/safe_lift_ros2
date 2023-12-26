@@ -27,7 +27,7 @@ class CustomMsgSubscriber(Node):
         # 转换CustomMsg为点云数据
         points = []
         for point in msg.points:
-            points.append([point.x, point.y, point.z])
+            points.append([point.x, point.y, point.z, point.reflectivity])
         self.frame_data.append(points)
 
     def save_and_clear_frame_data(self):
