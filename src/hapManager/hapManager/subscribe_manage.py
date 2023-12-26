@@ -1,39 +1,52 @@
 import rclpy
 from rclpy.node import Node
-from livox_ros_driver2.msg import CustomMsg  # 确保这是正确的导入路径
-import pcl  # 导入PCL库
-
+from livox_ros_driver2.msg import CustomMsg
+from sensor_msgs.msg import PointCloud2
+import pcl  # 引入PCL库
+import numpy as np
 
 class CustomMsgSubscriber(Node):
     def __init__(self):
         super().__init__('custom_msg_subscriber')
         self.subscription = self.create_subscription(
             CustomMsg,
-            '/livox/lidar',  # 替换为实际的话题名称
+            '/livox/lidar',
             self.listener_callback,
             10)
+        self.frames_buffer = []
+        self.frame_count = 0
 
     def listener_callback(self, msg):
-        self.get_logger().info('Received message')
+        # 处理CustomMsg，转换为点云数据
+        point_cloud = self.convert_to_point_cloud(msg)
+        self.frames_buffer.append(point_cloud)
+        self.frame_count += 1
 
-        # 处理CustomMsg以获取点云数据
-        cloud = self.convert_to_pcl(msg.points)
+        # 检查是否收集了足够的帧进行合成
+        if self.frame_count == 10:
+            combined_frame = self.combine_frames(self.frames_buffer)
+            self.save_to_pcd(combined_frame)
+            self.frames_buffer = []
+            self.frame_count = 0
 
-        # 保存点云数据为PCL文件
-        pcl.save(cloud, 'output.pcd')
+    def convert_to_point_cloud(self, msg):
+        # 将CustomMsg转换为PCL点云数据
+        points = []
+        for point in msg.points:
+            points.append([point.x, point.y, point.z])
+        pcl_data = pcl.PointCloud(np.array(points, dtype=np.float32))
+        return pcl_data
 
-        self.get_logger().info('Point cloud saved as output.pcd')
+    def combine_frames(self, frames):
+        # 合成多个帧
+        combined = pcl.PointCloud()
+        for frame in frames:
+            combined += frame
+        return combined
 
-    def convert_to_pcl(self, points):
-        # 将CustomMsg中的点云数据转换为PCL格式
-        # 这需要根据CustomPoint的具体结构来编写转换逻辑
-        # 例如:
-        pcl_cloud = pcl.PointCloud()
-        for point in points:
-            # 根据CustomPoint的结构添加点到pcl_cloud
-            pass
-        return pcl_cloud
-
+    def save_to_pcd(self, point_cloud):
+        # 保存点云数据为PCD文件
+        pcl.save(point_cloud, 'combined_frame.pcd')
 
 def main(args=None):
     rclpy.init(args=args)
@@ -41,7 +54,6 @@ def main(args=None):
     rclpy.spin(custom_msg_subscriber)
     custom_msg_subscriber.destroy_node()
     rclpy.shutdown()
-
 
 if __name__ == '__main__':
     main()
