@@ -18,7 +18,7 @@ class CustomMsgSubscriber(Node):
         self.max_frames = 10  # 收集10帧数据
 
     def listener_callback(self, msg):
-        self.get_logger().info('Received message: "%s"' % str(msg))
+        # self.get_logger().info('Received message: "%s"' % str(msg))
         self.process_message(msg)
         if len(self.frame_data) >= self.max_frames:
             self.save_and_clear_frame_data()
@@ -27,7 +27,7 @@ class CustomMsgSubscriber(Node):
         # 转换CustomMsg为点云数据
         points = []
         for point in msg.points:
-            points.append([point.x, point.y, point.z, point.reflectivity])
+            points.append([point.x, point.y, point.z])
         self.frame_data.append(points)
 
     def save_and_clear_frame_data(self):
