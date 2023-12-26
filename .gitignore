@@ -7,3 +7,7 @@ log
 src/log
 
 *.log
+
+install
+
+build
