@@ -38,6 +38,9 @@ class CustomMsgSubscriber(Node):
         # 转换为二进制格式
         binary_filename = f'frame_{self.frame_count}.bin'
         self.save_binary(merged_points, binary_filename)
+        # 保存为CSV文件
+        csv_filename = f'frame_{self.frame_count}.csv'
+        self.save_csv(merged_points, csv_filename)
         # 清除当前帧数据并更新帧计数
         self.frame_data = []
         self.frame_count += 1
@@ -51,9 +54,17 @@ class CustomMsgSubscriber(Node):
 
     def save_binary(self, points, filename):
         # 保存为二进制格式
-        with open(filename, 'wb') as f:
+        points.tofile(filename)
+        # with open(filename, 'wb') as f:
+        #     for p in points:
+        #         f.write(struct.pack('fff', p[0], p[1], p[2]))  # 只保存x, y, z
+
+    def save_csv(self, points, filename):
+        # 保存为CSV格式
+        with open(filename, 'w') as f:
             for p in points:
-                f.write(struct.pack('fff', p[0], p[1], p[2]))  # 只保存x, y, z
+                csv_line = ','.join(map(str, p))
+                f.write(csv_line + '\n')
 
 def main(args=None):
     rclpy.init(args=args)
