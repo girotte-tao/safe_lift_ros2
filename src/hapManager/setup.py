@@ -20,10 +20,10 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'publisher = hapDataManager.publisher:main',
-            'subscriber = hapDataManager.subscriber:main',
-            'ws_publisher = hapDataManager.ws_publisher:main',
-            'livox_subscriber = hapDataManager.livox_subscriber:main'
+            'publisher = hapManager.publisher:main',
+            'subscriber = hapManager.subscriber:main',
+            'ws_publisher = hapManager.ws_publisher:main',
+            'livox_subscriber = hapManager.livox_subscriber:main'
         ],
     },
 )
