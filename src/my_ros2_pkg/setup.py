@@ -22,7 +22,8 @@ setup(
         'console_scripts': [
             'publisher = my_ros2_pkg.publisher:main',
             'subscriber = my_ros2_pkg.subscriber:main',
-            'ws_publisher = my_ros2_pkg.ws_publisher:main'
+            'ws_publisher = my_ros2_pkg.ws_publisher:main',
+            'livox_subscriber = my_ros2_pkg.livox_subscriber:main'
         ],
     },
 )
