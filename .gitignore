@@ -2,4 +2,8 @@ build/*
 
 install/*
 
-log/*
+log
+
+src/log
+
+*.log
