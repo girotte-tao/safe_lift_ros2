@@ -24,7 +24,7 @@ setup(
             'subscriber = hapManager.subscriber:main',
             'ws_publisher = hapManager.ws_publisher:main',
             'livox_subscriber = hapManager.livox_subscriber:main',
-            'subscribe_manager = hapManager.subscribe_manager'
+            'subscribe_manage = hapManager.subscribe_manage'
         ],
     },
 )
