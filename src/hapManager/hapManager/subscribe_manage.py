@@ -6,48 +6,44 @@ import struct
 import os
 import json
 import socketio
+import requests
 
-class wsPublisher():
-    def __init__(self, url, namespace, event):
-        self.url = url
-        self.namespace = namespace
-        self.event = event
-        self.sio = socketio.Client(reconnection=True)
-        self.connected = False
+def send_get_request(url):
+    try:
+        response = requests.get(url)
+        response.raise_for_status() # 检查请求是否成功
+        return response.text # 或者 response.json() 如果响应是JSON
+    except requests.RequestException as e:
+        print(f"请求错误: {e}")
+        return None
+    
+def send_post_request(url, data):
+    headers = {'Content-Type': 'application/json'}
+    try:
+        response = requests.post(url, data=json.dumps(data), headers=headers)
+        response.raise_for_status() # 检查请求是否成功
+        return response.text # 或者 response.json() 如果响应是JSON
+    except requests.RequestException as e:
+        print(f"请求错误: {e}")
+        return None
 
-        @self.sio.event
-        def connect():
-            print("Connected to the server.")
-            self.connected = True
-            
-        @self.sio.on('lidar_message', namespace=self.namespace)
-        def on_message(data):
-            print("Received response:", data)
 
-        @self.sio.event
-        def disconnect():
-            print("Disconnected from the server.")
-            self.connected = False
+def lidar_data_generator(frame_data, batch_size):
+    print(len(frame_data))
+    for i in range(0, len(frame_data), batch_size):
+        print(i)
+        yield frame_data[i:i + batch_size]
 
-        try:
-            self.sio.connect(url, namespaces=[self.namespace])
-        except socketio.exceptions.ConnectionError as e:
-            print(f"Connection failed: {e}")
+def send_lidar_data(frame_data, batch_size):
+    url_post = 'http://8.217.216.75/api/lidar_message'
+    for batch in lidar_data_generator(frame_data, batch_size):
+        post_response = send_post_request(url_post, {'data': batch.tolist(), 'length':batch_size})
+        if post_response:
+            print(f"收到post响应: {post_response}")
 
-    def publish(self, data):
-        if self.connected:
-            self.sio.emit(self.event, data, namespace=self.namespace)
-        else:
-            print("Not connected. Cannot publish data.")
-
-    def destroy(self):
-        if self.connected:
-            self.sio.disconnect()
-
-        self.connected = False
-
+    
 class CustomMsgSubscriber(Node):
-    def __init__(self, publisher=None):
+    def __init__(self):
         super().__init__('custom_msg_subscriber')
         self.subscription = self.create_subscription(
             CustomMsg,
@@ -57,15 +53,15 @@ class CustomMsgSubscriber(Node):
         self.frame_data = []
         self.frame_count = 0
         self.max_frames = 1  # 收集10帧数据
-        self.publisher = publisher
+        self.merged_points = []
 
     def listener_callback(self, msg):
         # self.get_logger().info('Received message: "%s"' % str(msg))
         self.process_message(msg)
         if len(self.frame_data) >= self.max_frames:
-            if self.publisher:
-                self.publisher.publish(json.dumps(self.frame_data))
             self.save_and_clear_frame_data()
+            send_lidar_data(self.merged_points, 10)
+
 
 
     def process_message(self, msg):
@@ -78,8 +74,9 @@ class CustomMsgSubscriber(Node):
     def save_and_clear_frame_data(self):
         # 合并数据并保存为PCD文件
         merged_points = np.concatenate(self.frame_data, axis=0)
+        self.merged_points = merged_points
         pcd_filename = f'frame_{self.frame_count}.pcd'
-        self.save_pcd(merged_points, pcd_filename)
+        # self.save_pcd(merged_points, pcd_filename)
         # 转换为二进制格式
         # binary_filename = f'frame_{self.frame_count}.bin'
         # self.save_binary(merged_points, binary_filename)
@@ -112,15 +109,8 @@ class CustomMsgSubscriber(Node):
                 f.write(csv_line + '\n')
 
 def main(args=None):
-    url = 'ws://8.217.216.75:80/socket-io' 
-    namespace = '/ws'
-    # event = 'message'
-    event = 'lidar_message'
-
-    ws_publisher = wsPublisher(url, namespace, event)
-
     rclpy.init(args=args)
-    custom_msg_subscriber = CustomMsgSubscriber(None)
+    custom_msg_subscriber = CustomMsgSubscriber()
     rclpy.spin(custom_msg_subscriber)
     custom_msg_subscriber.destroy_node()
     rclpy.shutdown()
